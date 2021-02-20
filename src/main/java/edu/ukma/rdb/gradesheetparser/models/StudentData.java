@@ -10,9 +10,9 @@ public class StudentData {
     int termGrade;
     int examGrade;
     int sum;
-    String sumIsCorrect;
+    boolean sumIsCorrect;
     String nationalGrade;
     boolean nationalGradeIsCorrect;
-    String ectsGrade;
+    Character ectsGrade;
     boolean ectsGradeIsCorrect;
 }
