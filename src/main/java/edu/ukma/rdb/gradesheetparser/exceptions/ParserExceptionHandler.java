@@ -1,13 +1,11 @@
-package edu.ukma.rdb.gradesheetparser;
+package edu.ukma.rdb.gradesheetparser.exceptions;
 
-import edu.ukma.rdb.gradesheetparser.exceptions.ParseStructuralError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @ControllerAdvice

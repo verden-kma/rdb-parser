@@ -57,6 +57,7 @@ public class ParseService implements IParser {
             add("Відмінно");
             add("Добре");
             add("Задовільно");
+            add("Незадовільно");
             add("Не відвідував");
             add("Не допущений");
         }});
@@ -78,7 +79,6 @@ public class ParseService implements IParser {
             text = text.replaceAll("(_+)|(\\s{2,})", " ");
 
             GradeSheet sheet = identifySheet(text);
-//            System.out.println(text);
 
             setSheetCode(text, sheet);
             setOkr(text, sheet);
@@ -97,7 +97,9 @@ public class ParseService implements IParser {
 
             if (sheet instanceof ChadStudentsSheet) {
                 ChadStudentsSheet chadSheet = (ChadStudentsSheet) sheet;
-
+                setPresent(text, chadSheet);
+                setMissing(text, chadSheet);
+                setBanned(text, chadSheet);
             } else {
                 Bigunets bigunetsSheet = (Bigunets) sheet;
                 setCause(text, bigunetsSheet);
@@ -106,6 +108,40 @@ public class ParseService implements IParser {
 
             return sheet;
         }
+    }
+
+    private void setBanned(String text, ChadStudentsSheet chadSheet) {
+        long tableBanned = chadSheet.getData().stream()
+                .filter(studentData -> studentData.getNationalGrade().equalsIgnoreCase("Не відвідував")).count();
+        Pattern p = Pattern.compile("(?iu)кількість студентів, недопущених до екзамену\\s*/тези\\s*/заліку\\s*(\\d+)");
+        Matcher m = p.matcher(text);
+        if (!m.find()) throw new ParseStructuralError("Не вказано к-сть недопущених студентв.");
+        int suggestedBanned = Integer.parseInt(m.group(1));
+        chadSheet.setBannedStudents(suggestedBanned);
+        chadSheet.setBannedStudentsIsCorrect(suggestedBanned == tableBanned);
+    }
+
+    private void setMissing(String text, ChadStudentsSheet chadSheet) {
+        long tableAbsent = chadSheet.getData().stream()
+                .filter(studentData -> studentData.getNationalGrade().equalsIgnoreCase("Не відвідував")).count();
+        Pattern p = Pattern.compile("(?iu)кількість студентів, які не з’явились на екзамен\\s*/тезу\\s*/залік\\s*(\\d+)");
+        Matcher m = p.matcher(text);
+        if (!m.find()) throw new ParseStructuralError("Не вказано к-сть відсутніх студентв.");
+        int suggestedAbsent = Integer.parseInt(m.group(1));
+        chadSheet.setMissingStudents(suggestedAbsent);
+        chadSheet.setMissingStudentsIsCorrect(suggestedAbsent == tableAbsent);
+    }
+
+    private void setPresent(String text, ChadStudentsSheet chadSheet) {
+        long tablePresent = chadSheet.getData().stream()
+                .filter(studentData -> !(studentData.getNationalGrade().equalsIgnoreCase("Не відвідував")
+                        || studentData.getNationalGrade().equalsIgnoreCase("Не допущений"))).count();
+        Pattern p = Pattern.compile("(?iu)Кількість студентів на екзамені\\s*/тезі\\s*/заліку\\s*(\\d+)");
+        Matcher m = p.matcher(text);
+        if (!m.find()) throw new ParseStructuralError("Не вказано к-сть присутніх студентв.");
+        int suggestedPresent = Integer.parseInt(m.group(1));
+        chadSheet.setPresentStudents(suggestedPresent);
+        chadSheet.setPresentStudentsIsCorrect(suggestedPresent == tablePresent);
     }
 
     private void setExpiration(String text, Bigunets bigunetsSheet) {
