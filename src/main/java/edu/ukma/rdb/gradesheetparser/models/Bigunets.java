@@ -7,7 +7,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Bigunets extends GradeSheet {
     String cause;
+    String causeError;
     String expires;
+    String expiresError;
 
     public Bigunets() {
         sheetType = "bigunets";

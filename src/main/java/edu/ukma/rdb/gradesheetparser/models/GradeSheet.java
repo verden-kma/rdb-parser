@@ -1,5 +1,6 @@
 package edu.ukma.rdb.gradesheetparser.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 
@@ -13,28 +14,43 @@ public class GradeSheet {
     @Nullable
     private String fileName;
     private Integer sheetCode;
+    private String sheetCodeError;
     private String okr;
+    private String okrError;
     private String faculty;
+    private String facultyError;
     private Integer eduYear;
+    private String eduYearError;
     private String group;
+    private String groupError;
     private String subject;
+    private String subjectError;
     private String term;
+    private String termError;
     private Integer creditPoints;
+    private String creditPointsError;
     private String controlForm;
+    private String controlFormError;
+    @JsonFormat(pattern = "dd, MM, yyyy")
     private LocalDate date;
+    private String dateError;
     private String teacherName;
+    private String teacherNameError;
     private List<String> teacherRank;
+    private String teacherRankError;
     private List<StudentData> data;
+    //    private List<StudentData> dataError;
     private String dean;
-    private List<String> errors;
+    private String deanError;
+//    private List<String> errors;
 
     public void addStudentData(StudentData std) {
         if (data == null) data = new ArrayList<>();
         data.add(std);
     }
 
-    public void addError(String message) {
-        if (errors == null) errors = new ArrayList<>();
-        errors.add(message);
-    }
+//    public void addError(String message) {
+//        if (errors == null) errors = new ArrayList<>();
+//        errors.add(message);
+//    }
 }
