@@ -4,15 +4,15 @@ import lombok.Data;
 
 @Data
 public class StudentData {
-    int ordinal;
-    String name;
-    String bookNo;
-    int termGrade;
-    int examGrade;
-    int sum;
-    boolean sumIsCorrect;
-    String nationalGrade;
-    boolean nationalGradeIsCorrect;
-    Character ectsGrade;
-    boolean ectsGradeIsCorrect;
+    private int ordinal;
+    private String name;
+    private String bookNo;
+    private Integer termGrade;
+    private Integer examGrade;
+    private Integer sum;
+    private boolean sumIsCorrect;
+    private String nationalGrade;
+    private boolean nationalGradeIsCorrect;
+    private Character ectsGrade;
+    private boolean ectsGradeIsCorrect;
 }
