@@ -12,6 +12,6 @@ public class Bigunets extends GradeSheet {
     String expiresError;
 
     public Bigunets() {
-        sheetType = "bigunets";
+        sheetType = "ЗАЛІКОВО-ЕКЗАМЕНАЦІЙНИЙ ЛИСТОК";
     }
 }

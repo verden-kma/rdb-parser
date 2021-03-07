@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class ChadStudentsSheet extends GradeSheet {
     public ChadStudentsSheet() {
-        sheetType = "general";
+        sheetType = "ЗАЛІКОВО-ЕКЗАМЕНАЦІЙНА ВІДОМІСТЬ";
     }
 
     private Integer present;

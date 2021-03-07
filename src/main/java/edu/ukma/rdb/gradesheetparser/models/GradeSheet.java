@@ -1,6 +1,5 @@
 package edu.ukma.rdb.gradesheetparser.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 
@@ -31,8 +30,8 @@ public class GradeSheet {
     private String creditPointsError;
     private String controlForm;
     private String controlFormError;
-    @JsonFormat(pattern = "dd, MM, yyyy")
     private LocalDate date;
+    private String literalDate;
     private String dateError;
     private String teacherName;
     private String teacherNameError;

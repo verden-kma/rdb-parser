@@ -65,8 +65,6 @@ public class ParseService implements IParser {
         }});
     }};
 
-//    private final List<String> errors = new ArrayList<>();
-
     private final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
     @Override
@@ -241,14 +239,15 @@ public class ParseService implements IParser {
     }
 
     private void setDate(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)дата\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4})");
+        Pattern p = Pattern.compile("(?iu)дата(\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4}))");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setDateError("Відсутня або неповна дата.");
             return;
         }
-        LocalDate date = LocalDate.of(Integer.parseInt(m.group(3)), MONTHS_MAP.get(m.group(2)), Integer.parseInt(m.group(1)));
+        LocalDate date = LocalDate.of(Integer.parseInt(m.group(4)), MONTHS_MAP.get(m.group(3)), Integer.parseInt(m.group(2)));
         sheet.setDate(date);
+        sheet.setLiteralDate(m.group(1).trim());
     }
 
     private void setControlForm(String text, GradeSheet sheet) {
@@ -312,13 +311,13 @@ public class ParseService implements IParser {
     }
 
     private void setFaculty(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)(факультет\\s+(\\p{IsCyrillic}|\\s)+)\\s+рік");
+        Pattern p = Pattern.compile("(?iu)факультет\\s+((\\p{IsCyrillic}|\\s)+)\\s+рік");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setFacultyError("Відсутній факультет.");
             return;
         }
-        sheet.setFaculty(m.group(1));
+        sheet.setFaculty(m.group(1).trim());
     }
 
     private void setOkr(String text, GradeSheet sheet) {
