@@ -1,10 +1,7 @@
 package edu.ukma.rdb.gradesheetparser;
 
 import edu.ukma.rdb.gradesheetparser.exceptions.ParseStructuralError;
-import edu.ukma.rdb.gradesheetparser.models.Bigunets;
-import edu.ukma.rdb.gradesheetparser.models.ChadStudentsSheet;
-import edu.ukma.rdb.gradesheetparser.models.GradeSheet;
-import edu.ukma.rdb.gradesheetparser.models.StudentData;
+import edu.ukma.rdb.gradesheetparser.models.*;
 import edu.ukma.rdb.gradesheetparser.models.cors.ChadSheetCore;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -14,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -161,11 +157,10 @@ public class ParseService implements IParser {
         Pattern p = Pattern.compile("(?iu)дійсне до\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4})");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            bigunetsSheet.setCauseError("Відсутня або неповна дата направлення.");
+            bigunetsSheet.setExpiresError("Відсутня або неповна дата дійсності направлення.");
             return;
         }
-        LocalDate date = LocalDate.of(Integer.parseInt(m.group(3)), MONTHS_MAP.get(m.group(2)), Integer.parseInt(m.group(1)));
-        bigunetsSheet.setDate(date);
+        bigunetsSheet.setExpires(new CustomDate(Integer.parseInt(m.group(1)), m.group(2).trim(), Integer.parseInt(m.group(3))));
     }
 
     private void setCause(String text, Bigunets bigunetsSheet) {
@@ -203,13 +198,16 @@ public class ParseService implements IParser {
                     std.setTermGrade(Integer.parseInt(m.group(5)));
                     std.setExamGrade(Integer.parseInt(m.group(6)));
                     std.setSum(Integer.parseInt(m.group(7)));
-                    if (std.getSum() == std.getTermGrade() + std.getExamGrade())
+                    if ((std.getSum() != null && std.getTermGrade() != null && std.getExamGrade() != null) &&
+                            (std.getSum() == std.getTermGrade() + std.getExamGrade()))
                         std.setSumIsCorrect(true);
                     std.setNationalGrade(m.group(8));
-                    if (NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
+                    if (sheet.getControlForm() != null &&
+                            NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
                         std.setNationalGradeIsCorrect(true);
                     std.setEctsGrade(m.group(9).charAt(0));
-                    if (ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
+                    if (ECTS_ASSERTS.get(std.getEctsGrade()) != null &&
+                            ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
                         std.setEctsGradeIsCorrect(true);
                     sheet.addStudentData(std);
                 });
@@ -239,15 +237,14 @@ public class ParseService implements IParser {
     }
 
     private void setDate(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)дата(\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4}))");
+        Pattern p = Pattern.compile("(?iu)дата\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4})");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setDateError("Відсутня або неповна дата.");
             return;
         }
-        LocalDate date = LocalDate.of(Integer.parseInt(m.group(4)), MONTHS_MAP.get(m.group(3)), Integer.parseInt(m.group(2)));
-        sheet.setDate(date);
-        sheet.setLiteralDate(m.group(1).trim());
+//        LocalDate date = LocalDate.of(Integer.parseInt(m.group(4)), MONTHS_MAP.get(m.group(3)), Integer.parseInt(m.group(2)));
+        sheet.setDate(new CustomDate(Integer.parseInt(m.group(1)), m.group(2).trim(), Integer.parseInt(m.group(3))));
     }
 
     private void setControlForm(String text, GradeSheet sheet) {
@@ -421,7 +418,7 @@ public class ParseService implements IParser {
         if (sheet.getControlForm() == null || !(sheet.getControlForm().equalsIgnoreCase("залік")
                 || sheet.getControlForm().equalsIgnoreCase("екзамен")))
             sheet.setControlFormError("Допустимі форми контролю - 'залік' або 'екзамен'.");
-        if (sheet.getDate() == null || sheet.getDate().isAfter(LocalDate.now()))
+        if (sheet.getDate() == null)
             sheet.setDateError("Дата оцінювання має бути вказана, майбутні дати не допускаються.");
         if (sheet.getTerm() == null || sheet.getTeacherName().matches("\\s*"))
             sheet.setTeacherNameError("ПІБ викладача відсутні.");

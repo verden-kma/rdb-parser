@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 public class Bigunets extends GradeSheet {
     String cause;
     String causeError;
-    String expires;
+    CustomDate expires;
     String expiresError;
 
     public Bigunets() {

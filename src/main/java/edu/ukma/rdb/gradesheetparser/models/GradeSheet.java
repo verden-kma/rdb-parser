@@ -3,7 +3,6 @@ package edu.ukma.rdb.gradesheetparser.models;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +29,8 @@ public class GradeSheet {
     private String creditPointsError;
     private String controlForm;
     private String controlFormError;
-    private LocalDate date;
-    private String literalDate;
+    private CustomDate date;
+    //    private String literalDate;
     private String dateError;
     private String teacherName;
     private String teacherNameError;
