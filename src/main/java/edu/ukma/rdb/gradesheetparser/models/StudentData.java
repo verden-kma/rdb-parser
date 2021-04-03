@@ -5,7 +5,10 @@ import lombok.Data;
 @Data
 public class StudentData {
     private int ordinal;
-    private String name;
+    //    private String name;
+    private String surname;
+    private String firstName;
+    private String lastName;
     private String nameError;
     private String bookNo;
     private String bookNoError;

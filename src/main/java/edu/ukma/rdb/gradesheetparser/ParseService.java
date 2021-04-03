@@ -186,26 +186,33 @@ public class ParseService implements IParser {
     private void setData(String text, GradeSheet sheet) {
         Stream.of(text.split(LINE_SEPARATOR))
                 .forEach(datum -> {
-                    Pattern p = Pattern.compile("(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s){2,})(.+?)(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\p{IsCyrillic}+)\\s+(\\w)");
+                    Pattern p = Pattern.compile("(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s){2,})\\s*(І \\d{3}/\\d{2} (бп)|(мп))?\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\p{IsCyrillic}+)\\s+(\\w)");
                     Matcher m = p.matcher(datum);
                     if (!m.find()) {
                         return;
                     }
                     StudentData std = new StudentData();
                     std.setOrdinal(Integer.parseInt(m.group(1)));
-                    std.setName(m.group(2).trim());
-                    std.setBookNo(m.group(4).trim());
-                    std.setTermGrade(Integer.parseInt(m.group(5)));
-                    std.setExamGrade(Integer.parseInt(m.group(6)));
-                    std.setSum(Integer.parseInt(m.group(7)));
+
+                    String[] fullName = m.group(2).trim().split("\\s+");
+                    std.setSurname(fullName[0]);
+                    std.setFirstName(fullName[1]);
+                    if (fullName.length == 3) std.setLastName(fullName[2]);
+
+                    if (m.group(4) != null)
+                        std.setBookNo(m.group(4).trim());
+
+                    std.setTermGrade(Integer.parseInt(m.group(7)));
+                    std.setExamGrade(Integer.parseInt(m.group(8)));
+                    std.setSum(Integer.parseInt(m.group(9)));
                     if ((std.getSum() != null && std.getTermGrade() != null && std.getExamGrade() != null) &&
                             (std.getSum() == std.getTermGrade() + std.getExamGrade()))
                         std.setSumIsCorrect(true);
-                    std.setNationalGrade(m.group(8));
+                    std.setNationalGrade(m.group(10));
                     if (sheet.getControlForm() != null &&
                             NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
                         std.setNationalGradeIsCorrect(true);
-                    std.setEctsGrade(m.group(9).charAt(0));
+                    std.setEctsGrade(m.group(11).charAt(0));
                     if (ECTS_ASSERTS.get(std.getEctsGrade()) != null &&
                             ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
                         std.setEctsGradeIsCorrect(true);
@@ -430,8 +437,9 @@ public class ParseService implements IParser {
 
     private void validateStudentData(GradeSheet sheet) {
         sheet.getData().forEach(std -> {
-            if (std.getName() == null || std.getName().matches("\\s*"))
-                std.setNameError("Відсутнє ім'я в номера " + std.getOrdinal());
+            if (std.getSurname() == null || std.getSurname().matches("\\s*")
+                    || std.getFirstName() == null || std.getFirstName().matches("\\s*"))
+                std.setNameError("Неправильно сформоване ім'я в номера " + std.getOrdinal());
             if (std.getBookNo() == null || std.getBookNo().matches("\\s*"))
                 std.setBookNoError("Відсутній код залікової книжки у номера " + std.getOrdinal());
 
