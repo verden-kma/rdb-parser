@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @Service
 public class ParseService implements IParser {
@@ -71,11 +70,10 @@ public class ParseService implements IParser {
             PDFTextStripper pdfStripper = new PDFTextStripper();
             String text = pdfStripper.getText(document);
 
-            String startHook = "Підпис " + LINE_SEPARATOR + "викладача";
-            int tableStart = text.indexOf(startHook);
-            int tableEnd = text.indexOf('*');
-            String table = text.substring(tableStart + startHook.length(), tableEnd).trim();
             text = text.replaceAll("(_+)|(\\s{2,})", " ");
+            Pattern tablePattern = Pattern.compile("(?ui).*?п\\s*і\\s*д\\s*п\\s*и\\s*с\\s*в\\s*и\\s*к\\s*л\\s*а\\s*д\\s*а\\s*ч\\s*а(.*?)\\*.*?");
+            Matcher tableMatch = tablePattern.matcher(text);
+            String table = tableMatch.find() ? tableMatch.group(1) : "";
 
             GradeSheet sheet = identifySheet(text);
             sheet.setFileName(input.getOriginalFilename());
@@ -184,40 +182,50 @@ public class ParseService implements IParser {
     }
 
     private void setData(String text, GradeSheet sheet) {
-        Stream.of(text.split(LINE_SEPARATOR))
-                .forEach(datum -> {
-                    Pattern p = Pattern.compile("(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s){2,})\\s*(І \\d{3}/\\d{2} (бп)|(мп))?\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\p{IsCyrillic}+)\\s+(\\w)");
-                    Matcher m = p.matcher(datum);
-                    if (!m.find()) {
-                        return;
-                    }
-                    StudentData std = new StudentData();
-                    std.setOrdinal(Integer.parseInt(m.group(1)));
+        Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І \\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\w)?\\s*");
+        Matcher m = p.matcher(text); // 5 Димченко Микита Олегович І 016/10 мп Не відвідував F
+        while (m.find()) {
+            StudentData std = new StudentData();
+            std.setOrdinal(Integer.parseInt(m.group(1)));
 
-                    String[] fullName = m.group(2).trim().split("\\s+");
-                    std.setSurname(fullName[0]);
-                    std.setFirstName(fullName[1]);
-                    if (fullName.length == 3) std.setLastName(fullName[2]);
+            if (m.group(2) != null) {
+                String[] fullName = m.group(2).trim().split("\\s+");
+                std.setSurname(fullName[0]);
+                std.setFirstName(fullName[1]);
+                if (fullName.length == 3) std.setLastName(fullName[2]);
+            }
 
-                    if (m.group(4) != null)
-                        std.setBookNo(m.group(4).trim());
+            if (m.group(4) != null)
+                std.setBookNo(m.group(4).trim());
 
-                    std.setTermGrade(Integer.parseInt(m.group(7)));
-                    std.setExamGrade(Integer.parseInt(m.group(8)));
-                    std.setSum(Integer.parseInt(m.group(9)));
-                    if ((std.getSum() != null && std.getTermGrade() != null && std.getExamGrade() != null) &&
-                            (std.getSum() == std.getTermGrade() + std.getExamGrade()))
-                        std.setSumIsCorrect(true);
-                    std.setNationalGrade(m.group(10));
-                    if (sheet.getControlForm() != null &&
-                            NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
-                        std.setNationalGradeIsCorrect(true);
-                    std.setEctsGrade(m.group(11).charAt(0));
-                    if (ECTS_ASSERTS.get(std.getEctsGrade()) != null &&
-                            ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
-                        std.setEctsGradeIsCorrect(true);
-                    sheet.addStudentData(std);
-                });
+            if (m.group(8) != null)
+                std.setTermGrade(Integer.parseInt(m.group(8)));
+
+            if (m.group(9) != null)
+                std.setExamGrade(Integer.parseInt(m.group(9)));
+
+            if (m.group(10) != null)
+                std.setSum(Integer.parseInt(m.group(10)));
+
+            if ((std.getSum() != null && std.getTermGrade() != null && std.getExamGrade() != null) &&
+                    (std.getSum() == std.getTermGrade() + std.getExamGrade()))
+                std.setSumIsCorrect(true);
+
+            if (m.group(11) != null)
+                std.setNationalGrade(m.group(11));
+
+            if (sheet.getControlForm() != null && std.getNationalGrade() != null && NATIONAL_GRADES.containsKey(sheet.getControlForm().toLowerCase())
+                    && NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
+                std.setNationalGradeIsCorrect(true);
+
+            if (m.group(12) != null)
+                std.setEctsGrade(m.group(12).charAt(0));
+
+            if (std.getEctsGrade() != null && std.getSum() != null && ECTS_ASSERTS.containsKey(std.getEctsGrade())
+                    && ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
+                std.setEctsGradeIsCorrect(true);
+            sheet.addStudentData(std);
+        }
     }
 
     private void setTeacherRank(String text, GradeSheet sheet) {
