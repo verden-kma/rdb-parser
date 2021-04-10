@@ -11,10 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Service
 public class ParseService implements IParser {
@@ -90,7 +92,7 @@ public class ParseService implements IParser {
             setDate(text, sheet);
             setTeacherName(text, sheet);
             setTeacherRank(text, sheet);
-            setData(table, sheet);
+            setStudentData(table, sheet);
             setDean(text, sheet);
 
             if (sheet instanceof ChadStudentsSheet) {
@@ -165,7 +167,7 @@ public class ParseService implements IParser {
         Pattern p = Pattern.compile("(?iu)причина перенесення((\\p{IsCyrillic}|\\s)+)\\b\\s*форма");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            bigunetsSheet.setExpiresError("Відсутня причина перенесення.");
+            bigunetsSheet.setCauseError("Відсутня причина перенесення.");
             return;
         }
         bigunetsSheet.setCause(m.group(1).trim());
@@ -181,7 +183,7 @@ public class ParseService implements IParser {
         sheet.setDean(m.group(1).trim());
     }
 
-    private void setData(String text, GradeSheet sheet) {
+    private void setStudentData(String text, GradeSheet sheet) {
         Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І \\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\w)?\\s*");
         Matcher m = p.matcher(text); // 5 Димченко Микита Олегович І 016/10 мп Не відвідував F
         while (m.find()) {
@@ -193,6 +195,8 @@ public class ParseService implements IParser {
                 std.setSurname(fullName[0]);
                 std.setFirstName(fullName[1]);
                 if (fullName.length == 3) std.setLastName(fullName[2]);
+                if (Stream.of(fullName).anyMatch(x -> x.contains(".")))
+                    std.setNameError("Можливо ім'я містить скорочення");
             }
 
             if (m.group(4) != null)
@@ -232,7 +236,7 @@ public class ParseService implements IParser {
         Pattern p = Pattern.compile("(?iu),(.+?)прізвище");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            sheet.setTeacherNameError("Відсутні ПІБ викладача.");
+            sheet.setTeacherRankError("Відсутні ПІБ викладача.");
             return;
         }
         List<String> ranks = new ArrayList<>(m.groupCount());
@@ -245,10 +249,15 @@ public class ParseService implements IParser {
         Pattern p = Pattern.compile("(?iu)р\\.?\\s*((\\b\\p{IsCyrillic}+\\s*){3}),");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            sheet.setTeacherNameError("Відсутні ПІБ викладача.");
+            sheet.setTeacherNameError("Відсутні або неповні ПІБ викладача.");
             return;
         }
-        sheet.setTeacherName(m.group(1));
+        String[] teacherFullName = m.group(1).trim().split("\\s+");
+        sheet.setTeacherSurname(teacherFullName[0]);
+        sheet.setTeacherFirstname(teacherFullName[1]);
+        sheet.setTeacherLastname(teacherFullName[2]);
+        if (m.group(1).contains("."))
+            sheet.setTeacherNameError("Можливо ім'я викладача містить скорочення.");
     }
 
     private void setDate(String text, GradeSheet sheet) {
@@ -270,10 +279,13 @@ public class ParseService implements IParser {
             return;
         }
         sheet.setControlForm(m.group(2));
+        if (!(m.group(2).equalsIgnoreCase("залік") || m.group(2).equalsIgnoreCase("екзамен"))) {
+            sheet.setControlFormError("Прийнятні форми контролю - залік або екзамен.");
+        }
     }
 
     private void setCreditPoints(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)залікові бали\\s*(\\d)");
+        Pattern p = Pattern.compile("(?iu)залікові бали\\s*(\\d{1,2})");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setCreditPointsError("Відсутні залікові бали.");
@@ -283,17 +295,20 @@ public class ParseService implements IParser {
     }
 
     private void setTerm(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)семестр\\s*(\\d\\p{IsCyrillic}?)");
+        Pattern p = Pattern.compile("(?iu)семестр\\s*(\\dд?)");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            sheet.setTermError("Відсутня семестр.");
+            sheet.setTermError("Відсутній семестр.");
             return;
         }
         sheet.setTerm(m.group(1));
+        int termN = Integer.parseInt(m.group(1).charAt(0) + "");
+        if (termN < 1 || termN > 8)
+            sheet.setTermError("Тримести можуть бути від 1 до 8.");
     }
 
     private void setSubject(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)дисципліна\\s*((\\p{IsCyrillic}|\\s)+?)\\s*семестр");
+        Pattern p = Pattern.compile("(?iu)дисципліна\\s*((\\p{IsCyrillic}|\\w|\\s)+?)\\s*семестр");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setSubjectError("Відсутня дисципліна.");
@@ -310,6 +325,9 @@ public class ParseService implements IParser {
             return;
         }
         sheet.setGroup(m.group(1));
+        if (!(m.group(1).matches("(?u)\\d+І") || m.group(1).equalsIgnoreCase("бігунець"))) {
+            sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
+        }
     }
 
     private void setEduYear(String text, GradeSheet sheet) {
@@ -320,6 +338,15 @@ public class ParseService implements IParser {
             return;
         }
         sheet.setEduYear(Integer.parseInt(m.group(1)));
+        if (sheet.getOkr() != null) {
+            if (sheet.getOkr().equalsIgnoreCase("бакалавр")) {
+                if (sheet.getEduYear() < 1 || sheet.getEduYear() > 4)
+                    sheet.setEduYearError("для бакалаврів роки навчання від 1 до 4");
+            } else if (sheet.getOkr().equalsIgnoreCase("магістр")) {
+                if (sheet.getEduYear() < 1 || sheet.getEduYear() > 2)
+                    sheet.setEduYearError("для магістрів роки навчання 1 або 2");
+            }
+        }
     }
 
     private void setFaculty(String text, GradeSheet sheet) {
@@ -340,6 +367,8 @@ public class ParseService implements IParser {
             return;
         }
         sheet.setOkr(m.group(1));
+        if (!(sheet.getOkr().equalsIgnoreCase("бакалавр") || sheet.getOkr().equalsIgnoreCase("магістр")))
+            sheet.setOkrError("припустимі ОКР: бакалавр, магістр");
     }
 
     private void setSheetCode(String text, GradeSheet sheet) {
@@ -357,30 +386,44 @@ public class ParseService implements IParser {
         ChadSheetCore basicChecked = validateGradeSheet(input);
         ChadStudentsSheet chadSheet = new ChadStudentsSheet();
         BeanUtils.copyProperties(basicChecked, chadSheet);
-        setPresent(chadSheet);
-        setMissing(chadSheet);
-        setBanned(chadSheet);
+        setPresent(chadSheet, input);
+        setMissing(chadSheet, input);
+        setBanned(chadSheet, input);
         return chadSheet;
     }
 
-    private void setBanned(ChadStudentsSheet chadSheet) {
-        if (chadSheet.getBanned() == null) {
-            chadSheet.setBannedIsCorrect(false);
+    private void setPresent(ChadStudentsSheet chadSheet, ChadSheetCore input) {
+        if (input.getPresent() == null) {
+            chadSheet.setPresentIsCorrect(false);
             return;
         }
-        long dataBanned = chadSheet.getData().stream()
-                .filter(std -> std.getNationalGrade() != null && std.getNationalGrade().equalsIgnoreCase("Не допущений")).count();
-        chadSheet.setBannedIsCorrect(chadSheet.getBanned() == dataBanned);
+        chadSheet.setPresent(input.getPresent());
+        long dataPresent = chadSheet.getData().stream()
+                .filter(std -> std.getNationalGrade() != null && !(std.getNationalGrade().equalsIgnoreCase("Не відвідував")
+                        || std.getNationalGrade().equalsIgnoreCase("Не допущений"))).count();
+        chadSheet.setMissingIsCorrect(chadSheet.getPresent() == dataPresent);
     }
 
-    private void setMissing(ChadStudentsSheet chadSheet) {
-        if (chadSheet.getMissing() == null) {
+    private void setMissing(ChadStudentsSheet chadSheet, ChadSheetCore input) {
+        if (input.getMissing() == null) {
             chadSheet.setMissingIsCorrect(false);
             return;
         }
+        chadSheet.setMissing(input.getMissing());
         long dataMissing = chadSheet.getData().stream()
                 .filter(std -> std.getNationalGrade() != null && std.getNationalGrade().equalsIgnoreCase("Не відвідував")).count();
         chadSheet.setMissingIsCorrect(chadSheet.getMissing() == dataMissing);
+    }
+
+    private void setBanned(ChadStudentsSheet chadSheet, ChadSheetCore input) {
+        if (input.getBanned() == null) {
+            chadSheet.setBannedIsCorrect(false);
+            return;
+        }
+        chadSheet.setBanned(input.getBanned());
+        long dataBanned = chadSheet.getData().stream()
+                .filter(std -> std.getNationalGrade() != null && std.getNationalGrade().equalsIgnoreCase("Не допущений")).count();
+        chadSheet.setBannedIsCorrect(chadSheet.getBanned() == dataBanned);
     }
 
     private GradeSheet identifySheet(String str) {
@@ -395,17 +438,6 @@ public class ParseService implements IParser {
         throw new ParseStructuralError("Не вдалося визначити тип заліково-екзаменаційного документу.");
     }
 
-    private void setPresent(ChadStudentsSheet chadSheet) {
-        if (chadSheet.getPresent() == null) {
-            chadSheet.setPresentIsCorrect(false);
-            return;
-        }
-        long dataPresent = chadSheet.getData().stream()
-                .filter(std -> std.getNationalGrade() != null && !(std.getNationalGrade().equalsIgnoreCase("Не відвідував")
-                        || std.getNationalGrade().equalsIgnoreCase("Не допущений"))).count();
-        chadSheet.setMissingIsCorrect(chadSheet.getMissing() == dataPresent);
-    }
-
     @Override
     public Bigunets validate(Bigunets input) {
         Bigunets basicChecked = validateGradeSheet(input);
@@ -417,26 +449,52 @@ public class ParseService implements IParser {
 
     private <T extends GradeSheet> T validateGradeSheet(T sheet) {
         if (sheet.getSheetCode() == null) sheet.setSheetCodeError("Бракує коду відомості.");
+
         if (sheet.getOkr() == null || !(sheet.getOkr().equalsIgnoreCase("бакалавр")
                 || sheet.getOkr().equalsIgnoreCase("магістр")))
             sheet.setOkrError("Хибник освітній рівень, допустимі: бакалавр/магістр.");
+
         if (sheet.getFaculty() == null || sheet.getFaculty().matches("\\s*"))
             sheet.setFacultyError("Відсутній факультет.");
-        if (sheet.getEduYear() == null || sheet.getEduYear() < 1 || sheet.getEduYear() > 6)
-            sheet.setEduYearError("Допустимі роки навчання - від 1 до 6.");
+
+        if (sheet.getEduYear() == null
+                || (sheet.getOkr().equalsIgnoreCase("бакалавр") && (sheet.getEduYear() < 1 || sheet.getEduYear() > 4))
+                || (sheet.getOkr().equalsIgnoreCase("магістр") && (sheet.getEduYear() < 1 || sheet.getEduYear() > 2)))
+            sheet.setEduYearError("Допустимі роки навчання бакалаврів - від 1 до 4, магістрів - 1 або 2.");
+
         if (sheet.getGroup() == null || sheet.getGroup().matches("\\s*")) sheet.setGroupError("Група не вказана.");
+        else if (!(sheet.getGroup().matches("(?u)\\d+І") || sheet.getGroup().equalsIgnoreCase("бігунець"))) {
+            sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
+        }
+
         if (sheet.getSubject() == null || sheet.getSubject().matches("\\s*"))
             sheet.setSubjectError("Предмет не вказаний.");
+
         if (sheet.getTerm() == null || !sheet.getTerm().matches("(?u)\\dд?"))
             sheet.setTermError("Семестр має бути вказаний у форматі '<цифра>[д]'");
+
         if (sheet.getCreditPoints() == null) sheet.setCreditPointsError("Кількість кредитів не вказана.");
+        else if (sheet.getCreditPoints() < 1 || sheet.getCreditPoints() > 62)
+            sheet.setCreditPointsError("Кількість кредитів вказана неправильно.");
+
         if (sheet.getControlForm() == null || !(sheet.getControlForm().equalsIgnoreCase("залік")
                 || sheet.getControlForm().equalsIgnoreCase("екзамен")))
             sheet.setControlFormError("Допустимі форми контролю - 'залік' або 'екзамен'.");
-        if (sheet.getDate() == null)
-            sheet.setDateError("Дата оцінювання має бути вказана, майбутні дати не допускаються.");
-        if (sheet.getTerm() == null || sheet.getTeacherName().matches("\\s*"))
-            sheet.setTeacherNameError("ПІБ викладача відсутні.");
+
+        if (sheet.getDate() == null) {
+            sheet.setDateError("Дата оцінювання має бути вказана.");
+        } else {
+            LocalDate passedDate = LocalDate.of(sheet.getDate().getYear(), MONTHS_MAP.get(sheet.getDate().getMonth()), sheet.getDate().getDay());
+            if (passedDate.isAfter(LocalDate.now())) {
+                sheet.setDateError("Майбутні дати не допускаються.");
+            }
+        }
+
+        if (sheet.getTeacherSurname() == null || sheet.getTeacherSurname().matches("\\s*") || sheet.getTeacherSurname().contains(".")
+                || sheet.getTeacherFirstname() == null || sheet.getTeacherFirstname().matches("\\s*") || sheet.getTeacherFirstname().contains(".")
+                || sheet.getTeacherLastname() == null || sheet.getTeacherLastname().matches("\\s*") || sheet.getTeacherLastname().contains("."))
+            sheet.setTeacherNameError("ПІБ викладача потенційно містять скорочення або частково неповні.");
+
         if (sheet.getDean() == null || sheet.getDean().matches("\\s*")) sheet.setDeanError("ПІБ декана відсутні.");
 
         validateStudentData(sheet);
@@ -445,17 +503,25 @@ public class ParseService implements IParser {
 
     private void validateStudentData(GradeSheet sheet) {
         sheet.getData().forEach(std -> {
-            if (std.getSurname() == null || std.getSurname().matches("\\s*")
-                    || std.getFirstName() == null || std.getFirstName().matches("\\s*"))
+            if (std.getSurname() == null || std.getSurname().matches("\\s*") || std.getSurname().contains(".")
+                    || std.getFirstName() == null || std.getFirstName().matches("\\s*") || std.getFirstName().contains(".")
+                    || (std.getLastName() != null && (std.getLastName().matches("\\s+") || std.getLastName().contains("."))))
                 std.setNameError("Неправильно сформоване ім'я в номера " + std.getOrdinal());
-            if (std.getBookNo() == null || std.getBookNo().matches("\\s*"))
+
+            if (std.getBookNo() == null)
                 std.setBookNoError("Відсутній код залікової книжки у номера " + std.getOrdinal());
+            else if (!std.getBookNo().matches("І \\d{3}/\\d{2}\\s*((бп)|(мп))"))
+                std.setBookNoError("Неправильно сформований код залікової книжки у номера " + std.getOrdinal());
 
             if (std.getTermGrade() == null)
                 std.setTermGradeError("Нема оцінки за трим.");
+            else if (std.getTermGrade() < 0 || std.getTermGrade() > 100)
+                std.setTermGradeError("Оцінка може бути від 0 до 100.");
 
             if (std.getExamGrade() == null)
                 std.setExamGradeError("Нема оцінки за залік/екзамен.");
+            else if (std.getExamGrade() < 0 || std.getExamGrade() > 40)
+                std.setExamGradeError("Оцінки за підсумкові роботи можуть бути від 0 до 40.");
 
             if (std.getSum() != null && std.getExamGrade() != null && std.getEctsGrade() != null
                     && std.getSum() == std.getTermGrade() + std.getExamGrade())
@@ -463,7 +529,8 @@ public class ParseService implements IParser {
 
             if (sheet.getControlForm() != null && NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade()))
                 std.setNationalGradeIsCorrect(true);
-            if (std.getExamGrade() != null && ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
+
+            if (std.getExamGrade() != null && std.getSum() != null && ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum()))
                 std.setEctsGradeIsCorrect(true);
         });
     }

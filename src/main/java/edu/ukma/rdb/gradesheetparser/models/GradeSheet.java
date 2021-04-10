@@ -30,25 +30,19 @@ public class GradeSheet {
     private String controlForm;
     private String controlFormError;
     private CustomDate date;
-    //    private String literalDate;
     private String dateError;
-    private String teacherName;
+    private String teacherSurname;
+    private String teacherFirstname;
+    private String teacherLastname;
     private String teacherNameError;
     private List<String> teacherRank;
     private String teacherRankError;
     private List<StudentData> data;
-    //    private List<StudentData> dataError;
     private String dean;
     private String deanError;
-//    private List<String> errors;
 
     public void addStudentData(StudentData std) {
         if (data == null) data = new ArrayList<>();
         data.add(std);
     }
-
-//    public void addError(String message) {
-//        if (errors == null) errors = new ArrayList<>();
-//        errors.add(message);
-//    }
 }
