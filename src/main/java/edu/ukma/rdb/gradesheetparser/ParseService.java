@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
@@ -548,11 +549,26 @@ public class ParseService implements IParser {
             sheet.setDateError("Дата оцінювання має бути вказана.");
             sheet.setIsValid(false);
         } else {
-            LocalDate passedDate = LocalDate.of(sheet.getDate().getYear(), MONTHS_MAP.get(sheet.getDate().getMonth()), sheet.getDate().getDay());
-            if (passedDate.isAfter(LocalDate.now())) {
-                sheet.setDateError("Майбутні дати не допускаються.");
+            CustomDate passedCustom = sheet.getDate();
+            if (passedCustom.getDay() == null || passedCustom.getMonth() == null || passedCustom.getYear() == null) {
+                sheet.setDateError("Неповна дата.");
                 sheet.setIsValid(false);
+            } else if (!MONTHS_MAP.containsKey(passedCustom.getMonth())) {
+                sheet.setDateError("Недопустимий місяць.");
+                sheet.setIsValid(false);
+            } else {
+                try {
+                    LocalDate passedDate = LocalDate.of(passedCustom.getYear(), MONTHS_MAP.get(sheet.getDate().getMonth()), passedCustom.getDay());
+                    if (passedDate.isAfter(LocalDate.now())) {
+                        sheet.setDateError("Майбутні дати не допускаються.");
+                        sheet.setIsValid(false);
+                    }
+                } catch (DateTimeException wrongDate) {
+                    sheet.setDateError("Химерна дата.");
+                    sheet.setIsValid(false);
+                }
             }
+
         }
 
         if (sheet.getTeacherSurname() == null || sheet.getTeacherSurname().matches("\\s*") || sheet.getTeacherSurname().contains(".")
