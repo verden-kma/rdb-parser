@@ -2,11 +2,18 @@ package edu.ukma.rdb.gradesheetparser.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.annotation.Nullable;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class CustomDate {
-    private int day;
+    @Nullable
+    private Integer day;
+    @Nullable
     private String month;
-    private int year;
+    @Nullable
+    private Integer year;
 }

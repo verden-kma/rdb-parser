@@ -16,9 +16,9 @@ public class StudentData {
     private Integer examGrade;
     private String examGradeError;
     private Integer sum;
-    private boolean sumIsCorrect;
+    private boolean sumHasError;
     private String nationalGrade;
-    private boolean nationalGradeIsCorrect;
+    private boolean nationalGradeHasError;
     private Character ectsGrade;
-    private boolean ectsGradeIsCorrect;
+    private boolean ectsGradeHasError; // ectsGradeIsCorrect
 }

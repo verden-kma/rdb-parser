@@ -1,6 +1,5 @@
-package edu.ukma.rdb.gradesheetparser.models.cors;
+package edu.ukma.rdb.gradesheetparser.models;
 
-import edu.ukma.rdb.gradesheetparser.models.GradeSheet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

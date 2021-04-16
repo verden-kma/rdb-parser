@@ -40,6 +40,11 @@ public class GradeSheet {
     private List<StudentData> data;
     private String dean;
     private String deanError;
+    private Boolean isValid;
+
+    public void setIsValid(boolean v) {
+        isValid = v;
+    }
 
     public void addStudentData(StudentData std) {
         if (data == null) data = new ArrayList<>();

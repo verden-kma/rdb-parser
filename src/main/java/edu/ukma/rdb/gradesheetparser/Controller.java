@@ -1,9 +1,9 @@
 package edu.ukma.rdb.gradesheetparser;
 
 import edu.ukma.rdb.gradesheetparser.models.Bigunets;
+import edu.ukma.rdb.gradesheetparser.models.ChadSheetCore;
 import edu.ukma.rdb.gradesheetparser.models.ChadStudentsSheet;
 import edu.ukma.rdb.gradesheetparser.models.GradeSheet;
-import edu.ukma.rdb.gradesheetparser.models.cors.ChadSheetCore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +25,14 @@ public class Controller {
     @CrossOrigin
     @PostMapping("/check-chad-student-sheet")
     public ChadStudentsSheet checkSessionEnjoyer(@RequestBody ChadSheetCore sheet) {
+        sheet.setIsValid(true);
         return parser.validate(sheet);
     }
 
     @CrossOrigin
     @PostMapping("/check-bigunets")
     public Bigunets checkSessionFan(@RequestBody Bigunets bigunets) {
+        bigunets.setIsValid(true);
         return parser.validate(bigunets);
     }
 }

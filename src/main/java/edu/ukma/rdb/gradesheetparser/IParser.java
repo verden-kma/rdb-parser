@@ -1,9 +1,9 @@
 package edu.ukma.rdb.gradesheetparser;
 
 import edu.ukma.rdb.gradesheetparser.models.Bigunets;
+import edu.ukma.rdb.gradesheetparser.models.ChadSheetCore;
 import edu.ukma.rdb.gradesheetparser.models.ChadStudentsSheet;
 import edu.ukma.rdb.gradesheetparser.models.GradeSheet;
-import edu.ukma.rdb.gradesheetparser.models.cors.ChadSheetCore;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
