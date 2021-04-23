@@ -66,7 +66,7 @@ public class GradeSheet {
         studentsData.add(std);
     }
 
-    public void resetErrors() {
+    public void resetDefaults() {
         sheetCodeError = null;
         okrError = null;
         facultyError = null;
@@ -81,6 +81,22 @@ public class GradeSheet {
         teacherRank = null;
         teacherRankError = null;
         deanError = null;
-        studentsData.forEach(StudentData::resetErrors);
+        studentsData.forEach(StudentData::resetDefaults);
+
+        sheetCodeChanged = false;
+        okrChanged = false;
+        facultyChanged = false;
+        eduYearChanged = false;
+        groupChanged = false;
+        subjectChanged = false;
+        termChanged = false;
+        creditPointsChanged = false;
+        controlFormChanged = false;
+        dateChanged = false;
+        teacherSurnameChanged = false;
+        teacherFirstnameChanged = false;
+        teacherLastnameChanged = false;
+        teacherRankChanged = false;
+        deanChanged = false;
     }
 }

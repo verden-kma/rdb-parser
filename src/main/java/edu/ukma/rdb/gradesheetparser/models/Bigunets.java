@@ -18,9 +18,12 @@ public class Bigunets extends GradeSheet {
     }
 
     @Override
-    public void resetErrors() {
-        super.resetErrors();
+    public void resetDefaults() {
+        super.resetDefaults();
         causeError = null;
         expiresError = null;
+
+        causeChanged = false;
+        expiresChanged = false;
     }
 }

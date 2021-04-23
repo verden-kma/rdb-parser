@@ -75,7 +75,6 @@ public class ParseService implements IParser {
 
     @Override
     public GradeSheet parse(MultipartFile input) throws IOException {
-
         try (InputStream fileStream = input.getInputStream()) {
             PDDocument document = PDDocument.load(fileStream);
             PDFTextStripper pdfStripper = new PDFTextStripper();
@@ -276,6 +275,17 @@ public class ParseService implements IParser {
                     || !ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum())) {
                 std.setEctsGradeError(true);
                 sheet.setIsValid(false);
+            }
+
+            if (std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не допущений")
+                    || std.getNationalGrade().equals("Не відвідувала") || std.getNationalGrade().equals("Не допущена")) {
+                if (std.getSum() == null && std.getExamGrade() == null) {
+                    std.setTermGradeError(null);
+                    std.setExamGradeError(null);
+                    std.setSumError(false);
+                    std.setNationalGradeError(false);
+                    std.setEctsGradeError(!std.getEctsGrade().equals('F'));
+                }
             }
 
             sheet.addStudentData(std);
@@ -657,7 +667,7 @@ public class ParseService implements IParser {
                         || std.getNationalGrade().equalsIgnoreCase("Не допущений"))).count();
 
         if (chadSheet.getPresent() != dataPresent) {
-            chadSheet.setMissingError(true);
+            chadSheet.setPresentError(true);
             chadSheet.setIsValid(false);
         }
     }

@@ -7,6 +7,9 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ChadSheetCore extends GradeSheet {
     Integer present;
+    boolean presentChanged;
     Integer missing;
+    boolean missingChanged;
     Integer banned;
+    boolean bannedChanged;
 }

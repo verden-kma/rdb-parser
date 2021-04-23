@@ -31,7 +31,7 @@ public class StudentData {
     private boolean ectsGradeChanged;
     private boolean ectsGradeError;
 
-    public void resetErrors() {
+    public void resetDefaults() {
         nameError = null;
         bookNoError = null;
         termGradeError = null;
@@ -39,5 +39,15 @@ public class StudentData {
         sumError = false;
         nationalGradeError = false;
         ectsGradeError = false;
+
+        surnameChanged = false;
+        firstNameChanged = false;
+        lastNameChanged = false;
+        bookNoChanged = false;
+        termGradeChanged = false;
+        examGradeChanged = false;
+        sumChanged = false;
+        nationalGradeChanged = false;
+        ectsGradeChanged = false;
     }
 }
