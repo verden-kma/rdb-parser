@@ -11,10 +11,10 @@ public class ChadStudentsSheet extends GradeSheet {
     }
 
     private Integer present;
-    private boolean presentHasError;
+    private boolean presentError;
     private Integer missing;
-    private boolean missingHasError;
+    private boolean missingError;
     private Integer banned;
-    private boolean bannedHasError;
+    private boolean bannedError;
 }
 

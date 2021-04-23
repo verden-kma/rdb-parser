@@ -6,19 +6,38 @@ import lombok.Data;
 public class StudentData {
     private int ordinal;
     private String surname;
+    private boolean surnameChanged;
     private String firstName;
+    private boolean firstNameChanged;
     private String lastName;
+    private boolean lastNameChanged;
     private String nameError;
     private String bookNo;
+    private boolean bookNoChanged;
     private String bookNoError;
     private Integer termGrade;
+    private boolean termGradeChanged;
     private String termGradeError;
     private Integer examGrade;
+    private boolean examGradeChanged;
     private String examGradeError;
     private Integer sum;
-    private boolean sumHasError;
+    private boolean sumChanged;
+    private boolean sumError;
     private String nationalGrade;
-    private boolean nationalGradeHasError;
+    private boolean nationalGradeChanged;
+    private boolean nationalGradeError;
     private Character ectsGrade;
-    private boolean ectsGradeHasError; // ectsGradeIsCorrect
+    private boolean ectsGradeChanged;
+    private boolean ectsGradeError;
+
+    public void resetErrors() {
+        nameError = null;
+        bookNoError = null;
+        termGradeError = null;
+        examGradeError = null;
+        sumError = false;
+        nationalGradeError = false;
+        ectsGradeError = false;
+    }
 }

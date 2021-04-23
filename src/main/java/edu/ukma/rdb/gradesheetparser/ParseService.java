@@ -121,44 +121,49 @@ public class ParseService implements IParser {
     }
 
     private void setBanned(String text, ChadStudentsSheet chadSheet) {
-        long tableBanned = chadSheet.getData().stream()
-                .filter(studentData -> studentData.getNationalGrade().replaceAll("\\s+", "")
+        long tableBanned = chadSheet.getStudentsData().stream()
+                .filter(studentData -> studentData.getNationalGrade() != null
+                        && studentData.getNationalGrade().replaceAll("\\s+", "")
                         .matches("(?iu)недопущен((ий)|(а))")).count();
         Pattern p = Pattern.compile("(?iu)кількість студентів, недопущених до екзамену\\s*/тези\\s*/заліку\\s*(\\d+)");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            chadSheet.setBannedHasError(true);
+            chadSheet.setBannedError(true);
             chadSheet.setIsValid(false);
             return;
         }
         int suggestedBanned = Integer.parseInt(m.group(1));
         chadSheet.setBanned(suggestedBanned);
-        chadSheet.setBannedHasError(suggestedBanned != tableBanned);
-        if (chadSheet.isBannedHasError()) chadSheet.setIsValid(false);
+        chadSheet.setBannedError(suggestedBanned != tableBanned);
+        if (chadSheet.isBannedError()) chadSheet.setIsValid(false);
     }
 
     private void setMissing(String text, ChadStudentsSheet chadSheet) {
-        long tableAbsent = chadSheet.getData().stream()
-                .filter(studentData -> studentData.getNationalGrade().replaceAll("\\s+", "")
+        long tableAbsent = chadSheet.getStudentsData().stream()
+                .filter(studentData -> studentData.getNationalGrade() != null
+                        && studentData.getNationalGrade().replaceAll("\\s+", "")
                         .matches("(?iu)невідвідув((ав)|(ла))")).count();
         Pattern p = Pattern.compile("(?iu)кількість студентів, які не з’явились на екзамен\\s*/тезу\\s*/залік\\s*(\\d+)");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            chadSheet.setMissingHasError(true);
+            chadSheet.setMissingError(true);
             chadSheet.setIsValid(false);
             return;
         }
         int suggestedAbsent = Integer.parseInt(m.group(1));
         chadSheet.setMissing(suggestedAbsent);
-        chadSheet.setMissingHasError(suggestedAbsent != tableAbsent);
-        if (chadSheet.isMissingHasError()) chadSheet.setIsValid(false);
+        chadSheet.setMissingError(suggestedAbsent != tableAbsent);
+        if (chadSheet.isMissingError()) chadSheet.setIsValid(false);
     }
 
     private void setPresent(String text, ChadStudentsSheet chadSheet) {
-        long tablePresent = chadSheet.getData().stream()
-                .filter(studentData -> studentData.getNationalGrade().replaceAll("\\s+", "")
+        long tablePresent = chadSheet.getStudentsData().stream()
+                .filter(studentData -> studentData.getNationalGrade() != null
+                        && studentData.getNationalGrade().replaceAll("\\s+", "")
                         .matches("(?iu)(зараховано)|(незараховано)|(відмінно)|(добре)|(задовільно)|(незадовільно)"))
                 .count();
+
+        // chadSheet.getData().stream().filter(studentData -> studentData.getNationalGrade().replaceAll("\\s+", "").matches("(?iu)(зараховано)|(незараховано)|(відмінно)|(добре)|(задовільно)|(незадовільно)")).collect(Collectors.toList())
 
         /*
         *
@@ -169,14 +174,14 @@ public class ParseService implements IParser {
         Pattern p = Pattern.compile("(?iu)Кількість студентів на екзамені\\s*/тезі\\s*/заліку\\s*(\\d+)");
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            chadSheet.setPresentHasError(true);
+            chadSheet.setPresentError(true);
             chadSheet.setIsValid(false);
             return;
         }
         int suggestedPresent = Integer.parseInt(m.group(1));
         chadSheet.setPresent(suggestedPresent);
         if (suggestedPresent != tablePresent) {
-            chadSheet.setPresentHasError(true);
+            chadSheet.setPresentError(true);
             chadSheet.setIsValid(false);
         }
     }
@@ -248,7 +253,7 @@ public class ParseService implements IParser {
 
             if ((std.getSum() == null || std.getTermGrade() == null || std.getExamGrade() == null) ||
                     (std.getSum() != std.getTermGrade() + std.getExamGrade())) {
-                std.setSumHasError(true);
+                std.setSumError(true);
                 sheet.setIsValid(false);
             }
 
@@ -259,7 +264,7 @@ public class ParseService implements IParser {
 
             if (sheet.getControlForm() == null || std.getNationalGrade() == null || !NATIONAL_GRADES.containsKey(sheet.getControlForm().toLowerCase())
                     || !NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade())) {
-                std.setNationalGradeHasError(true);
+                std.setNationalGradeError(true);
                 sheet.setIsValid(false);
             }
 
@@ -269,7 +274,7 @@ public class ParseService implements IParser {
 
             if (std.getEctsGrade() == null || std.getSum() == null || !ECTS_ASSERTS.containsKey(std.getEctsGrade())
                     || !ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum())) {
-                std.setEctsGradeHasError(true);
+                std.setEctsGradeError(true);
                 sheet.setIsValid(false);
             }
 
@@ -588,7 +593,7 @@ public class ParseService implements IParser {
     }
 
     private void validateStudentData(GradeSheet sheet) {
-        sheet.getData().forEach(std -> {
+        sheet.getStudentsData().forEach(std -> {
             if (std.getSurname() == null || std.getSurname().matches("\\s*") || std.getSurname().contains(".")
                     || std.getFirstName() == null || std.getFirstName().matches("\\s*") || std.getFirstName().contains(".")
                     || (std.getLastName() != null && (std.getLastName().matches("\\s+") || std.getLastName().contains(".")))) {
@@ -622,19 +627,19 @@ public class ParseService implements IParser {
 
             if (std.getSum() == null || std.getExamGrade() == null || std.getEctsGrade() == null
                     || std.getSum() != std.getTermGrade() + std.getExamGrade()) {
-                std.setSumHasError(true);
+                std.setSumError(true);
                 sheet.setIsValid(false);
             }
 
             if (sheet.getControlForm() == null
                     || !NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade())) {
-                std.setNationalGradeHasError(true);
+                std.setNationalGradeError(true);
                 sheet.setIsValid(false);
             }
 
             if (std.getExamGrade() == null || std.getSum() == null
                     || !ECTS_ASSERTS.get(std.getEctsGrade()).apply(std.getSum())) {
-                std.setEctsGradeHasError(true);
+                std.setEctsGradeError(true);
                 sheet.setIsValid(false);
             }
         });
@@ -642,49 +647,49 @@ public class ParseService implements IParser {
 
     private void setPresent(ChadStudentsSheet chadSheet, ChadSheetCore input) {
         if (input.getPresent() == null) {
-            chadSheet.setPresentHasError(true);
+            chadSheet.setPresentError(true);
             chadSheet.setIsValid(false);
             return;
         }
         chadSheet.setPresent(input.getPresent());
-        long dataPresent = chadSheet.getData().stream()
+        long dataPresent = chadSheet.getStudentsData().stream()
                 .filter(std -> std.getNationalGrade() != null && !(std.getNationalGrade().equalsIgnoreCase("Не відвідував")
                         || std.getNationalGrade().equalsIgnoreCase("Не допущений"))).count();
 
         if (chadSheet.getPresent() != dataPresent) {
-            chadSheet.setMissingHasError(true);
+            chadSheet.setMissingError(true);
             chadSheet.setIsValid(false);
         }
     }
 
     private void setMissing(ChadStudentsSheet chadSheet, ChadSheetCore input) {
         if (input.getMissing() == null) {
-            chadSheet.setMissingHasError(true);
+            chadSheet.setMissingError(true);
             chadSheet.setIsValid(false);
             return;
         }
         chadSheet.setMissing(input.getMissing());
-        long dataMissing = chadSheet.getData().stream()
+        long dataMissing = chadSheet.getStudentsData().stream()
                 .filter(std -> std.getNationalGrade() != null && std.getNationalGrade().equalsIgnoreCase("Не відвідував")).count();
 
         if (chadSheet.getMissing() != dataMissing) {
-            chadSheet.setMissingHasError(true);
+            chadSheet.setMissingError(true);
             chadSheet.setIsValid(false);
         }
     }
 
     private void setBanned(ChadStudentsSheet chadSheet, ChadSheetCore input) {
         if (input.getBanned() == null) {
-            chadSheet.setBannedHasError(true);
+            chadSheet.setBannedError(true);
             chadSheet.setIsValid(false);
             return;
         }
         chadSheet.setBanned(input.getBanned());
-        long dataBanned = chadSheet.getData().stream()
+        long dataBanned = chadSheet.getStudentsData().stream()
                 .filter(std -> std.getNationalGrade() != null && std.getNationalGrade().equalsIgnoreCase("Не допущений")).count();
 
         if (chadSheet.getBanned() != dataBanned) {
-            chadSheet.setBannedHasError(true);
+            chadSheet.setBannedError(true);
             chadSheet.setIsValid(false);
         }
     }

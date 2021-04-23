@@ -12,33 +12,48 @@ public class GradeSheet {
     @Nullable
     private String fileName;
     private Integer sheetCode;
+    boolean sheetCodeChanged;
     private String sheetCodeError;
     private String okr;
+    boolean okrChanged;
     private String okrError;
     private String faculty;
+    boolean facultyChanged;
     private String facultyError;
     private Integer eduYear;
+    boolean eduYearChanged;
     private String eduYearError;
     private String group;
+    boolean groupChanged;
     private String groupError;
     private String subject;
+    boolean subjectChanged;
     private String subjectError;
     private String term;
+    boolean termChanged;
     private String termError;
     private Integer creditPoints;
+    boolean creditPointsChanged;
     private String creditPointsError;
     private String controlForm;
+    boolean controlFormChanged;
     private String controlFormError;
     private CustomDate date;
+    boolean dateChanged;
     private String dateError;
     private String teacherSurname;
+    boolean teacherSurnameChanged;
     private String teacherFirstname;
+    boolean teacherFirstnameChanged;
     private String teacherLastname;
+    boolean teacherLastnameChanged;
     private String teacherNameError;
     private List<String> teacherRank;
+    boolean teacherRankChanged;
     private String teacherRankError;
-    private List<StudentData> data;
+    boolean deanChanged;
     private String dean;
+    private List<StudentData> studentsData;
     private String deanError;
     private Boolean isValid;
 
@@ -47,7 +62,25 @@ public class GradeSheet {
     }
 
     public void addStudentData(StudentData std) {
-        if (data == null) data = new ArrayList<>();
-        data.add(std);
+        if (studentsData == null) studentsData = new ArrayList<>();
+        studentsData.add(std);
+    }
+
+    public void resetErrors() {
+        sheetCodeError = null;
+        okrError = null;
+        facultyError = null;
+        eduYearError = null;
+        groupError = null;
+        subjectError = null;
+        termError = null;
+        creditPointsError = null;
+        controlFormError = null;
+        dateError = null;
+        teacherNameError = null;
+        teacherRank = null;
+        teacherRankError = null;
+        deanError = null;
+        studentsData.forEach(StudentData::resetErrors);
     }
 }

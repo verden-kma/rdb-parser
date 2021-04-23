@@ -25,6 +25,7 @@ public class Controller {
     @CrossOrigin
     @PostMapping("/check-chad-student-sheet")
     public ChadStudentsSheet checkSessionEnjoyer(@RequestBody ChadSheetCore sheet) {
+        sheet.resetErrors();
         sheet.setIsValid(true);
         return parser.validate(sheet);
     }
@@ -32,6 +33,7 @@ public class Controller {
     @CrossOrigin
     @PostMapping("/check-bigunets")
     public Bigunets checkSessionFan(@RequestBody Bigunets bigunets) {
+        bigunets.resetErrors();
         bigunets.setIsValid(true);
         return parser.validate(bigunets);
     }
