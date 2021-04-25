@@ -277,8 +277,9 @@ public class ParseService implements IParser {
                 sheet.setIsValid(false);
             }
 
-            if (std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не допущений")
-                    || std.getNationalGrade().equals("Не відвідувала") || std.getNationalGrade().equals("Не допущена")) {
+            if ((std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не відвідувала"))
+                    || ((std.getNationalGrade().equals("Не допущений") || std.getNationalGrade().equals("Не допущена"))
+                    && std.getEctsGrade() == 'F')) {
                 if (std.getSum() == null && std.getExamGrade() == null) {
                     std.setTermGradeError(null);
                     std.setExamGradeError(null);
