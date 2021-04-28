@@ -23,7 +23,7 @@ public class GradeSheet {
     private Integer eduYear;
     boolean eduYearChanged;
     private String eduYearError;
-    private String group;
+    private Integer group;
     boolean groupChanged;
     private String groupError;
     private String subject;

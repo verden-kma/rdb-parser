@@ -393,14 +393,14 @@ public class ParseService implements IParser {
     }
 
     private void setGroup(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)група\\s*((\\p{IsCyrillic}|\\d)+)\\b");
+        Pattern p = Pattern.compile("(?iu)група\\s*(\\d+)\\p{IsCyrillic}?\\b");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setGroupError("Відсутня група.");
             sheet.setIsValid(false);
             return;
         }
-        sheet.setGroup(m.group(1));
+        sheet.setGroup(Integer.parseInt(m.group(1)));
         if (!(m.group(1).matches("(?u)\\d+І?") || m.group(1).equalsIgnoreCase("бігунець"))) {
             sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
             sheet.setIsValid(false);
@@ -529,13 +529,14 @@ public class ParseService implements IParser {
             sheet.setIsValid(false);
         }
 
-        if (sheet.getGroup() == null || sheet.getGroup().matches("\\s*")) {
+        if (sheet.getGroup() == null) {
             sheet.setGroupError("Група не вказана.");
             sheet.setIsValid(false);
-        } else if (!(sheet.getGroup().matches("(?u)\\d+І?") || sheet.getGroup().equalsIgnoreCase("бігунець"))) {
-            sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
-            sheet.setIsValid(false);
         }
+//        else if (!(sheet.getGroup().matches("(?u)\\d+І?") || sheet.getGroup().equalsIgnoreCase("бігунець"))) {
+//            sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
+//            sheet.setIsValid(false);
+//        }
 
         if (sheet.getSubject() == null || sheet.getSubject().matches("\\s*")) {
             sheet.setSubjectError("Предмет не вказаний.");
