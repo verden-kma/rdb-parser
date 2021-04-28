@@ -80,6 +80,10 @@ public class ParseService implements IParser {
             PDFTextStripper pdfStripper = new PDFTextStripper();
             String text = pdfStripper.getText(document);
 
+//            BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
+//            writer.write(text);
+//            writer.close();
+
             text = text.replaceAll("(_+)|(\\s{2,})", " ");
             Pattern tablePattern = Pattern.compile("(?ui).*?п\\s*і\\s*д\\s*п\\s*и\\s*с\\s*в\\s*и\\s*к\\s*л\\s*а\\s*д\\s*а\\s*ч\\s*а(.*?)\\*.*?");
             Matcher tableMatch = tablePattern.matcher(text);
@@ -101,7 +105,7 @@ public class ParseService implements IParser {
             setDate(text, sheet);
             setTeacherName(text, sheet);
             setTeacherRank(text, sheet);
-            setStudentData(table, sheet);
+            setStudentData(table.trim(), sheet);
             setDean(text, sheet);
 
             if (sheet instanceof ChadStudentsSheet) {
@@ -161,15 +165,6 @@ public class ParseService implements IParser {
                         && studentData.getNationalGrade().replaceAll("\\s+", "")
                         .matches("(?iu)(зараховано)|(незараховано)|(відмінно)|(добре)|(задовільно)|(незадовільно)"))
                 .count();
-
-        // chadSheet.getData().stream().filter(studentData -> studentData.getNationalGrade().replaceAll("\\s+", "").matches("(?iu)(зараховано)|(незараховано)|(відмінно)|(добре)|(задовільно)|(незадовільно)")).collect(Collectors.toList())
-
-        /*
-        *
-        * !(studentData.getNationalGrade().equalsIgnoreCase("Не відвідував")
-                        || studentData.getNationalGrade().equalsIgnoreCase("Не допущений"))
-        * */
-
         Pattern p = Pattern.compile("(?iu)Кількість студентів на екзамені\\s*/тезі\\s*/заліку\\s*(\\d+)");
         Matcher m = p.matcher(text);
         if (!m.find()) {
@@ -219,7 +214,7 @@ public class ParseService implements IParser {
     }
 
     private void setStudentData(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І \\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\w)?\\s*");
+        Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І\\d?\\s*\\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\w)?\\s*");
         Matcher m = p.matcher(text); // 5 Димченко Микита Олегович І 016/10 мп Не відвідував F
         while (m.find()) {
             StudentData std = new StudentData();
@@ -256,7 +251,9 @@ public class ParseService implements IParser {
                 sheet.setIsValid(false);
             }
 
-            final String normNatGrade = m.group(11).replaceAll("\\s+", "").toLowerCase();
+            final String normNatGrade = m.group(11) != null ?
+                    m.group(11).replaceAll("\\s+", "").toLowerCase()
+                    : null;
             if (m.group(11) != null && NAT_GRADES_NORM_TO_CORRECT.containsKey(normNatGrade)) {
                 std.setNationalGrade(NAT_GRADES_NORM_TO_CORRECT.get(normNatGrade));
             } else sheet.setIsValid(false);
