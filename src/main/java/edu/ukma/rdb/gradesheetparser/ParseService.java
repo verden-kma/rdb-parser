@@ -8,6 +8,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.DateTimeException;
@@ -90,9 +92,9 @@ public class ParseService implements IParser {
             PDFTextStripper pdfStripper = new PDFTextStripper();
             String text = pdfStripper.getText(document);
 
-//            BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
-//            writer.write(text);
-//            writer.close();
+            BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
+            writer.write(text);
+            writer.close();
 
             text = text.replaceAll("(_+)|(\\s{2,})", " ");
             Pattern tablePattern = Pattern.compile("(?ui).*?п\\s*і\\s*д\\s*п\\s*и\\s*с\\s*в\\s*и\\s*к\\s*л\\s*а\\s*д\\s*а\\s*ч\\s*а(.*?)\\*.*?");
@@ -561,6 +563,7 @@ public class ParseService implements IParser {
             sheet.setIsValid(false);
         }
 
+
         if (sheet.getCreditPoints() == null) {
             sheet.setCreditPointsError("Кількість кредитів не вказана.");
             sheet.setIsValid(false);
@@ -646,6 +649,10 @@ public class ParseService implements IParser {
                 std.setExamGradeError("Нема оцінки за залік/екзамен.");
                 sheet.setIsValid(false);
             }
+//            else if (std.getExamGrade() < 0 || std.getExamGrade() > 40) {
+//                std.setExamGradeError("Оцінки за підсумкові роботи можуть бути від 0 до 40.");
+//                sheet.setIsValid(false);
+//            }
 
             if (std.getSum() == null || std.getExamGrade() == null || std.getEctsGrade() == null
                     || std.getSum() != std.getTermGrade() + std.getExamGrade()) {

@@ -78,7 +78,6 @@ public class GradeSheet {
         controlFormError = null;
         dateError = null;
         teacherNameError = null;
-        teacherRank = null;
         teacherRankError = null;
         deanError = null;
         studentsData.forEach(StudentData::resetDefaults);
