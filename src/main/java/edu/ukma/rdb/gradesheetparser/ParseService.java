@@ -46,6 +46,16 @@ public class ParseService implements IParser {
                 put('F', (Integer grade) -> grade < 60);
             }};
 
+    private static final Map<String, Function<Integer, Boolean>> NATIONAL_ASSERTS =
+            new HashMap<String, Function<Integer, Boolean>>() {{
+                put("зараховано", (Integer grade) -> grade >= 60);
+                put("незараховано", (Integer grade) -> grade < 60);
+                put("відмінно", (Integer grade) -> grade > 90);
+                put("добре", (Integer grade) -> grade >= 71 && grade <= 90);
+                put("задовільно", (Integer grade) -> grade >= 60 && grade < 71);
+                put("незадовільно", (Integer grade) -> grade < 60);
+            }};
+
     private static final Map<String, Set<String>> NATIONAL_GRADES = new HashMap<String, Set<String>>() {{
         put("залік", new HashSet<String>() {{
             add("Зараховано");
@@ -89,6 +99,7 @@ public class ParseService implements IParser {
             Matcher tableMatch = tablePattern.matcher(text);
             String table = tableMatch.find() ? tableMatch.group(1) : "";
 
+
             GradeSheet sheet = identifySheet(text);
             sheet.setIsValid(true);
             sheet.setFileName(input.getOriginalFilename());
@@ -118,7 +129,6 @@ public class ParseService implements IParser {
                 setCause(text, bigunetsSheet);
                 setExpiration(text, bigunetsSheet);
             }
-
             return sheet;
         }
     }
@@ -181,7 +191,7 @@ public class ParseService implements IParser {
     }
 
     private void setExpiration(String text, Bigunets bigunetsSheet) {
-        Pattern p = Pattern.compile("(?iu)дійсне до\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4})");
+        Pattern p = Pattern.compile("(?iu)дійсне до\\s*\\W\\s*(\\d{2})\\s*\\W\\s*(\\p{IsCyrillic}+)\\s*(\\d{4})\\s*р\\.");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             bigunetsSheet.setExpiresError("Відсутня або неповна дата дійсності направлення.");
@@ -214,7 +224,7 @@ public class ParseService implements IParser {
     }
 
     private void setStudentData(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І\\d?\\s*\\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\w)?\\s*");
+        Pattern p = Pattern.compile("(?u)(\\d+)\\s+((\\p{IsCyrillic}{2,}\\s*){2,})?\\s*(І\\d?\\s*\\d{3}/\\d{2}\\s*((бп)|(мп)))?\\s*(\\d+)?\\s*(\\d+)?\\s*(\\d+)?\\s*([\\p{IsCyrillic} ]+)?\\s+(\\p{Alpha})?\\s*");
         Matcher m = p.matcher(text); // 5 Димченко Микита Олегович І 016/10 мп Не відвідував F
         while (m.find()) {
             StudentData std = new StudentData();
@@ -256,6 +266,12 @@ public class ParseService implements IParser {
                     : null;
             if (m.group(11) != null && NAT_GRADES_NORM_TO_CORRECT.containsKey(normNatGrade)) {
                 std.setNationalGrade(NAT_GRADES_NORM_TO_CORRECT.get(normNatGrade));
+                if (NATIONAL_ASSERTS.containsKey(normNatGrade) && std.getSum() != null) {
+                    if (!NATIONAL_ASSERTS.get(normNatGrade).apply(std.getSum())) {
+                        std.setNationalGradeError(true);
+                        sheet.setIsValid(false);
+                    }
+                }
             } else sheet.setIsValid(false);
 
             if (sheet.getControlForm() == null || std.getNationalGrade() == null || !NATIONAL_GRADES.containsKey(sheet.getControlForm().toLowerCase())
@@ -274,15 +290,15 @@ public class ParseService implements IParser {
                 sheet.setIsValid(false);
             }
 
-            if (std.getNationalGrade() != null && ((std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не відвідувала"))
-                    || ((std.getNationalGrade().equals("Не допущений") || std.getNationalGrade().equals("Не допущена")))
-                    && std.getEctsGrade() == 'F')) {
+            if (std.getEctsGrade() == null && std.getNationalGrade() != null &&
+                    ((std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не відвідувала"))
+                            || (std.getNationalGrade().equals("Не допущений") || std.getNationalGrade().equals("Не допущена")))) {
                 if (std.getSum() == null && std.getExamGrade() == null) {
                     std.setTermGradeError(null);
                     std.setExamGradeError(null);
                     std.setSumError(false);
                     std.setNationalGradeError(false);
-                    std.setEctsGradeError(!std.getEctsGrade().equals('F'));
+                    std.setEctsGradeError(false);
                 }
             }
 
@@ -323,7 +339,7 @@ public class ParseService implements IParser {
     }
 
     private void setDate(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)дата\\P{IsCyrillic}*?(\\d{2})\\P{IsCyrillic}*(\\p{IsCyrillic}+)\\s*(\\d{4})");
+        Pattern p = Pattern.compile("(?iu)дата\\s*\\W\\s*(\\d{2})\\s*\\W\\s*(\\p{IsCyrillic}+)\\s*(\\d{4})\\s*р\\.");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setDateError("Відсутня або неповна дата.");
@@ -390,14 +406,14 @@ public class ParseService implements IParser {
     }
 
     private void setGroup(String text, GradeSheet sheet) {
-        Pattern p = Pattern.compile("(?iu)група\\s*(\\d+)\\p{IsCyrillic}?\\b");
+        Pattern p = Pattern.compile("(?iu)група\\s*((\\p{IsCyrillic}|\\d)+)\\b");
         Matcher m = p.matcher(text);
         if (!m.find()) {
             sheet.setGroupError("Відсутня група.");
             sheet.setIsValid(false);
             return;
         }
-        sheet.setGroup(Integer.parseInt(m.group(1)));
+        sheet.setGroup(m.group(1));
         if (!(m.group(1).matches("(?u)\\d+І?") || m.group(1).equalsIgnoreCase("бігунець"))) {
             sheet.setGroupError("Припустимі значення групи: 'бігунець' або '[число]І'.");
             sheet.setIsValid(false);
