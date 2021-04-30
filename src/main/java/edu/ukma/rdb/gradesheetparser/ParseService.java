@@ -645,9 +645,6 @@ public class ParseService implements IParser {
             if (std.getExamGrade() == null) {
                 std.setExamGradeError("Нема оцінки за залік/екзамен.");
                 sheet.setIsValid(false);
-            } else if (std.getExamGrade() < 0 || std.getExamGrade() > 40) {
-                std.setExamGradeError("Оцінки за підсумкові роботи можуть бути від 0 до 40.");
-                sheet.setIsValid(false);
             }
 
             if (std.getSum() == null || std.getExamGrade() == null || std.getEctsGrade() == null
