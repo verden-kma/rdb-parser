@@ -290,7 +290,7 @@ public class ParseService implements IParser {
                 sheet.setIsValid(false);
             }
 
-            if (std.getEctsGrade() == null && std.getNationalGrade() != null &&
+            if (std.getNationalGrade() != null &&
                     ((std.getNationalGrade().equals("Не відвідував") || std.getNationalGrade().equals("Не відвідувала"))
                             || (std.getNationalGrade().equals("Не допущений") || std.getNationalGrade().equals("Не допущена")))) {
                 if (std.getSum() == null && std.getExamGrade() == null) {
@@ -656,10 +656,18 @@ public class ParseService implements IParser {
                 sheet.setIsValid(false);
             }
 
-            if (sheet.getControlForm() == null
-                    || !NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade())) {
+            if (sheet.getControlForm() == null || !NATIONAL_GRADES.containsKey(sheet.getControlForm().toLowerCase()) ||
+                    std.getNationalGrade() == null || !NATIONAL_GRADES.get(sheet.getControlForm().toLowerCase()).contains(std.getNationalGrade())) {
                 std.setNationalGradeError(true);
                 sheet.setIsValid(false);
+            } else {
+                final String normNatGrade = std.getNationalGrade().replaceAll("\\s+", "").toLowerCase();
+                if (NATIONAL_ASSERTS.containsKey(normNatGrade) && std.getSum() != null) {
+                    if (!NATIONAL_ASSERTS.get(normNatGrade).apply(std.getSum())) {
+                        std.setNationalGradeError(true);
+                        sheet.setIsValid(false);
+                    }
+                }
             }
 
             if (std.getExamGrade() == null || std.getSum() == null
